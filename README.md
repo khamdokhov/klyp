@@ -5,12 +5,14 @@
 Klyp quietly watches the system pasteboard, keeps a searchable history of everything you copy, and puts any item back with one click. Text, rich text, links, colors, images, and files — all supported. No account, no cloud, no browser extension.
 
 <p align="center">
-  <img src="Klyp/Resources/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" alt="Klyp app icon" width="128" height="128">
+  <img src="Klyp/Resources/Assets.xcassets/AppIcon.appiconset/icon_256x256@2x.png" alt="Klyp app icon" width="128" height="128">
 </p>
+
+<p align="center"><sub>App icon — <code>square.stack.3d.down.right</code> on a white squircle</sub></p>
 
 ## Download
 
-Grab the latest **`Klyp-x.x.dmg`** from [Releases](https://github.com/khamdokhov/klyp/releases), open it, and drag **Klyp** into **Applications**.
+Grab the latest **`Klyp-1.0.1.dmg`** from [Releases](https://github.com/khamdokhov/klyp/releases/latest), open it, and drag **Klyp** into **Applications**.
 
 > **First launch (unsigned build):** macOS may block the app. Right-click **Klyp → Open**, or go to **System Settings → Privacy & Security → Open Anyway**. You only need to do this once.
 
@@ -79,12 +81,12 @@ xcodebuild test -scheme Klyp -destination 'platform=macOS' -derivedDataPath buil
 
 ```bash
 ./scripts/make-dmg.sh
-# → dist/Klyp-1.0.dmg
+# → dist/Klyp-1.0.1.dmg
 ```
 
 ### Regenerate the app icon
 
-Icons are generated from the same SF Symbol as the menu bar (`square.stack.3d.down.right`):
+Icons are generated from the same SF Symbol as the menu bar (`square.stack.3d.down.right`) on a **white** squircle background:
 
 ```bash
 cat Tools/AppSymbol.swift Tools/GenerateAppIcon/main.swift | swift -
