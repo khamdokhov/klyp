@@ -1,0 +1,40 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserdata
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods / Carthage
+Pods/
+Carthage/Build/
+
+# Archives
+*.ipa
+*.dSYM.zip
+*.dSYM
+dist/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Code injection
+iOSInjectionProject/
