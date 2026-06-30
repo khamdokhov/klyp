@@ -21,8 +21,11 @@ jobs:
           xcodebuild -version
           ./scripts/make-dmg.sh
 
+      - name: Resolve DMG path
+        run: echo "DMG_PATH=$(ls dist/Klyp-*.dmg)" >> "$GITHUB_ENV"
+
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/Klyp-*.dmg
+          files: ${{ env.DMG_PATH }}
           generate_release_notes: true

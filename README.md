@@ -12,7 +12,7 @@ Klyp quietly watches the system pasteboard, keeps a searchable history of everyt
 
 ## Download
 
-Grab the latest **`Klyp-1.0.1.dmg`** from [Releases](https://github.com/khamdokhov/klyp/releases/latest), open it, and drag **Klyp** into **Applications**.
+Grab the latest **`Klyp-1.0.2.dmg`** from [Releases](https://github.com/khamdokhov/klyp/releases/latest), open it, and drag **Klyp** into **Applications**.
 
 > **First launch (unsigned build):** macOS may block the app. Right-click **Klyp → Open**, or go to **System Settings → Privacy & Security → Open Anyway**. You only need to do this once.
 
@@ -81,7 +81,7 @@ xcodebuild test -scheme Klyp -destination 'platform=macOS' -derivedDataPath buil
 
 ```bash
 ./scripts/make-dmg.sh
-# → dist/Klyp-1.0.1.dmg
+# → dist/Klyp-1.0.2.dmg
 ```
 
 ### Regenerate the app icon

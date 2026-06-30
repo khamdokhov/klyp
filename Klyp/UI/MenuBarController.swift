@@ -12,13 +12,10 @@ final class MenuBarController: NSObject {
     private var isSearching = false
     private var isPopoverOpen = false
     private var statusBarClickMonitor: Any?
-    private let symbolImageView = NSImageView()
 
     private let symbolPointSize: CGFloat = 14
-    private let canvasPointSize: CGFloat = 21
+    private let iconHeight: CGFloat = 18
     private let pixelScale: CGFloat = 2
-    private let symbolName = AppSymbol.statusBar
-    private let activeSymbolName = AppSymbol.statusBarActive
 
     init(
         historyStore: HistoryStore,
@@ -32,7 +29,7 @@ final class MenuBarController: NSObject {
         self.settings = settings
         self.globalHotkey = globalHotkey
         self.settingsWindowController = settingsWindowController
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
         configureStatusButton()
         ensureHistoryPanel()
@@ -56,7 +53,6 @@ final class MenuBarController: NSObject {
     func setPopoverOpen(_ isOpen: Bool) {
         guard isPopoverOpen != isOpen else { return }
         isPopoverOpen = isOpen
-        updateStatusBarImage()
         applyStatusButtonActiveState(isOpen)
     }
 
@@ -65,36 +61,18 @@ final class MenuBarController: NSObject {
         button.state = isOpen ? .on : .off
     }
 
-    func playCaptureFeedback(_ feedback: StatusBarClipFeedback) {
-        guard feedback == .captured,
-              !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        else { return }
-
-        if #available(macOS 14.0, *) {
-            symbolImageView.addSymbolEffect(.bounce, options: .nonRepeating)
-        }
-    }
-
     private func configureStatusButton() {
         guard let button = statusItem.button else { return }
-
-        symbolImageView.image = statusBarImage(symbolName: symbolName)
-        symbolImageView.imageScaling = .scaleProportionallyDown
-        symbolImageView.contentTintColor = .labelColor
-        symbolImageView.translatesAutoresizingMaskIntoConstraints = false
-
-        button.subviews.forEach { $0.removeFromSuperview() }
-        button.addSubview(symbolImageView)
-        NSLayoutConstraint.activate([
-            symbolImageView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
-            symbolImageView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            symbolImageView.widthAnchor.constraint(equalToConstant: canvasPointSize),
-            symbolImageView.heightAnchor.constraint(equalToConstant: canvasPointSize),
-        ])
-
-        button.image = nil
         button.imagePosition = .imageOnly
+        button.imageScaling = .scaleProportionallyDown
         button.toolTip = "Klyp"
+        applyStatusBarImage()
+    }
+
+    private func applyStatusBarImage() {
+        guard let image = statusBarImage(symbolName: AppSymbol.statusBar) else { return }
+        statusItem.button?.image = image
+        statusItem.length = image.size.width
     }
 
     private func installStatusBarClickMonitor() {
@@ -139,42 +117,110 @@ final class MenuBarController: NSObject {
         statusItem.menu = historyPanel.statusMenu
     }
 
-    private func updateStatusBarImage() {
-        let name = isPopoverOpen ? activeSymbolName : symbolName
-        symbolImageView.image = statusBarImage(symbolName: name)
-    }
-
     private func statusBarImage(symbolName: String) -> NSImage? {
         let config = NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .regular)
         guard let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Klyp")?
             .withSymbolConfiguration(config)
         else { return nil }
 
-        let pixelCanvas = canvasPointSize * pixelScale
-        let canvas = NSImage(size: NSSize(width: pixelCanvas, height: pixelCanvas))
-        canvas.lockFocus()
-        NSColor.clear.set()
-        NSRect(origin: .zero, size: NSSize(width: pixelCanvas, height: pixelCanvas)).fill()
+        let pixelHeight = iconHeight * pixelScale
+        let pixelWidth = pixelHeight * 2
+        guard let bitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(pixelWidth),
+            pixelsHigh: Int(pixelHeight),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .calibratedRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else { return nil }
+
+        NSGraphicsContext.saveGraphicsState()
+        let context = NSGraphicsContext(bitmapImageRep: bitmap)!
+        NSGraphicsContext.current = context
+
+        NSColor.clear.setFill()
+        NSRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight).fill()
 
         let symbolSize = symbol.size
         guard symbolSize.width > 0, symbolSize.height > 0 else {
-            canvas.unlockFocus()
+            NSGraphicsContext.restoreGraphicsState()
             return nil
         }
-        let fitScale = min(
-            (pixelCanvas * 0.9) / symbolSize.width,
-            (pixelCanvas * 0.9) / symbolSize.height
-        )
+
+        let fitScale = min(pixelWidth / symbolSize.width, pixelHeight / symbolSize.height)
         let drawSize = NSSize(width: symbolSize.width * fitScale, height: symbolSize.height * fitScale)
         let origin = NSPoint(
-            x: (pixelCanvas - drawSize.width) / 2,
-            y: (pixelCanvas - drawSize.height) / 2
+            x: (pixelWidth - drawSize.width) / 2,
+            y: (pixelHeight - drawSize.height) / 2
         )
-        symbol.draw(in: NSRect(origin: origin, size: drawSize), from: .zero, operation: .sourceOver, fraction: 1)
-        canvas.unlockFocus()
-        canvas.isTemplate = true
-        canvas.size = NSSize(width: canvasPointSize, height: canvasPointSize)
-        return canvas
+        symbol.draw(
+            in: NSRect(origin: origin, size: drawSize),
+            from: .zero,
+            operation: .sourceOver,
+            fraction: 1
+        )
+
+        NSGraphicsContext.restoreGraphicsState()
+
+        guard let cropped = croppedTemplateImage(from: bitmap, pixelScale: pixelScale) else { return nil }
+        return cropped
+    }
+
+    private func croppedTemplateImage(from bitmap: NSBitmapImageRep, pixelScale: CGFloat) -> NSImage? {
+        guard let cgImage = bitmap.cgImage else { return nil }
+
+        let width = cgImage.width
+        let height = cgImage.height
+        guard width > 0, height > 0,
+              let data = cgImage.dataProvider?.data,
+              let bytes = CFDataGetBytePtr(data)
+        else { return nil }
+
+        let bytesPerPixel = cgImage.bitsPerPixel / 8
+        guard bytesPerPixel >= 4 else { return nil }
+
+        let bytesPerRow = cgImage.bytesPerRow
+        var minX = width
+        var minY = height
+        var maxX = 0
+        var maxY = 0
+        var foundPixel = false
+
+        for y in 0 ..< height {
+            for x in 0 ..< width {
+                let offset = y * bytesPerRow + x * bytesPerPixel
+                let alpha = bytes[offset + 3]
+                if alpha > 8 {
+                    foundPixel = true
+                    minX = min(minX, x)
+                    minY = min(minY, y)
+                    maxX = max(maxX, x)
+                    maxY = max(maxY, y)
+                }
+            }
+        }
+
+        guard foundPixel else { return nil }
+
+        let cropRect = CGRect(
+            x: minX,
+            y: minY,
+            width: maxX - minX + 1,
+            height: maxY - minY + 1
+        )
+
+        guard let croppedCG = cgImage.cropping(to: cropRect) else { return nil }
+
+        let image = NSImage(cgImage: croppedCG, size: NSSize(
+            width: cropRect.width / pixelScale,
+            height: cropRect.height / pixelScale
+        ))
+        image.isTemplate = true
+        return image
     }
 
     func applyHotkey() {

@@ -7,7 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindowController: SettingsWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        var environment = AppEnvironment()
+        let environment = AppEnvironment()
         let settingsWindowController = SettingsWindowController(settings: environment.settings)
         self.settingsWindowController = settingsWindowController
 
@@ -19,10 +19,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settingsWindowController: settingsWindowController
         )
         self.menuBarController = menuBarController
-
-        environment.onClipFeedback = { [weak menuBarController] feedback in
-            menuBarController?.playCaptureFeedback(feedback)
-        }
         self.environment = environment
         environment.start()
     }

@@ -1,12 +1,6 @@
 import AppKit
 import Foundation
 
-enum StatusBarClipFeedback {
-    case captured
-    case deduplicated
-    case failed
-}
-
 @MainActor
 struct AppEnvironment {
     let settings: AppSettings
@@ -14,7 +8,6 @@ struct AppEnvironment {
     let pasteboardMonitor: PasteboardMonitor
     let pasteService: PasteService
     let globalHotkey: GlobalHotkey
-    var onClipFeedback: ((StatusBarClipFeedback) -> Void)?
 
     init() {
         settings = AppSettings()
@@ -62,27 +55,14 @@ struct AppEnvironment {
                 Log.info("Skipped clip type \(item.kind.rawValue) (disabled in settings)")
                 return
             }
-            let result = historyStore.add(item)
-            handleAddResult(result)
+            _ = historyStore.add(item)
         case .captureSecure:
             var secureItem = item
             secureItem.isSecure = true
             secureItem.previewText = SensitiveContent.redactedPreview(for: item)
-            let result = historyStore.add(secureItem)
-            handleAddResult(result)
+            _ = historyStore.add(secureItem)
         case let .skip(reason):
             Log.info("Skipped clip: \(reason)")
-        }
-    }
-
-    private func handleAddResult(_ result: HistoryAddResult) {
-        switch result {
-        case .inserted:
-            onClipFeedback?(.captured)
-        case .deduplicated:
-            onClipFeedback?(.deduplicated)
-        case .failed:
-            onClipFeedback?(.failed)
         }
     }
 }
