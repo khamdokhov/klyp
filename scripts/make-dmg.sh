@@ -21,6 +21,7 @@ if [[ ! -d "$APP" || "${CLEAN:-0}" == "1" ]]; then
     CODE_SIGN_IDENTITY=- \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=YES \
+    ENABLE_HARDENED_RUNTIME=NO \
     build
 fi
 
