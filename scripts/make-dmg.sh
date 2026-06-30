@@ -8,14 +8,19 @@ DERIVED_DATA="${DERIVED_DATA:-$ROOT/build/DerivedData}"
 PRODUCTS="$DERIVED_DATA/Build/Products/$CONFIGURATION"
 APP="$PRODUCTS/Klyp.app"
 
-if [[ ! -d "$APP" ]]; then
+if [[ ! -d "$APP" || "${CLEAN:-0}" == "1" ]]; then
   echo "Building $SCHEME ($CONFIGURATION)..."
+  rm -rf "$DERIVED_DATA"
   xcodebuild \
     -project "$ROOT/Klyp.xcodeproj" \
     -scheme "$SCHEME" \
     -configuration "$CONFIGURATION" \
     -destination 'platform=macOS' \
     -derivedDataPath "$DERIVED_DATA" \
+    CODE_SIGN_STYLE=Manual \
+    CODE_SIGN_IDENTITY=- \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=YES \
     build
 fi
 
