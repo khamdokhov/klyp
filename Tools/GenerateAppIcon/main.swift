@@ -25,7 +25,7 @@ let specs: [IconSpec] = [
 ]
 
 struct Palette {
-    static let background = NSColor(calibratedRed: 0.17, green: 0.18, blue: 0.20, alpha: 1)
+    static let background = NSColor.white
 }
 
 func repositoryRoot() -> URL {
